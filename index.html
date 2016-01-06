@@ -1,0 +1,235 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>hello phaser!</title>
+        <script src="phaser.min.js"></script>
+        <script src="perlin.js"></script>
+    </head>
+    <body>
+
+    <script type="text/javascript">
+        var game = new Phaser.Game(800, 600, Phaser.CANVAS, '', { preload: preload, create: create , update: update, render: render });
+        var time = new Phaser.Time(game);
+        noise.seed(Math.random());
+        var map;
+        var layer;
+        var terrain = [];
+        for (var x = 0; x < 32; x++){
+            terrain.push([]);
+            for (var y = 0; y < 32; y++){
+                terrain[x].push(0);
+            }
+        }
+        function preload () {
+            game.load.image('ground', 'sheet.png');
+            
+            
+        }
+        function create () {
+            
+            map = game.add.tilemap(null,16,16);
+            map.addTilesetImage('ground');
+            layer = map.create('level',32,32,16,16);
+            layer.scrollFactorX = 0;
+            layer.scrollFactorY = 0;
+            layer.resizeWorld();
+            createRandom();
+        }
+        function createRandom(){
+            noise.seed(Math.random());
+            createMap(0);
+        }
+        function createMap(time){
+            for (var x = 0; x < 32; x++) {
+                for (var y = 0; y < 32; y++) {
+                    // All noise functions return values in the range of -1 to 1.
+                    var value = noise.simplex3(x / 24, y / 24, time);
+                    
+                    terrain[x][y] = Math.floor((value+1)*1.5);   
+                    
+                }
+            }
+            
+            for (var x = 0; x < 32; x++) {
+                for (var y = 0; y < 32; y++) {
+                    getTile(x,y);//terrain[x][y];
+                    
+                }
+            }
+        }
+        
+        function getTile(x,y){
+            
+            if (terrain[x][y] == 0){
+                //Water 196?
+                map.putTile(196,x,y,layer);
+            }
+            
+            if (terrain[x][y] == 1){
+                //Grass 0
+                var UL = false;
+                var U = false;
+                var UR = false;
+                var L = false;
+                var R = false;
+                var DL = false;
+                var D = false;
+                var DR = false;
+                
+                
+                if (x == 0){
+                    UL = true;
+                    L = true;
+                    DL = true;
+                }
+                if (x == 31){
+                    UR = true;
+                    R = true;
+                    DR = true;
+                }
+                if (y == 0){
+                    UL = true;
+                    U = true;
+                    UR = true;
+                }
+                if (y == 31){
+                    DL = true;
+                    D = true;
+                    DR = true;
+                }
+                if (!UL){
+                    UL = terrain[x-1][y-1] == 1;
+                }
+                if (!U){
+                    U = terrain[x][y-1]== 1;
+                }
+                if (!UR){
+                    UR = terrain[x+1][y-1]== 1;
+                }
+                if (!L){
+                    L = terrain[x-1][y]== 1;
+                }
+                if (!R){
+                    R = terrain[x+1][y]== 1;
+                }
+                if (!DL){
+                    DL = terrain[x-1][y+1]== 1;
+                }
+                if (!D){
+                    D = terrain[x][y+1]== 1;
+                }
+                if (!DR){
+                    DR = terrain[x+1][y+1]== 1;
+                }
+                
+                var index = 1;
+                if (U && D && L && R){
+                    index = 174;
+                }
+                if (U && D && L && R && !DR){
+                    index = 0;
+                    if (terrain[x+1][y+1]== 0){
+                        index += 144;
+                    }
+                }
+                if (U && D && L && R && !DL){
+                    index = 5;
+                    if (terrain[x-1][y+1]== 0){
+                        index += 144;
+                    }
+                }
+                if (U && D && L && R && !UL){
+                    index = 125;
+                    if (terrain[x-1][y-1]== 0){
+                        index += 144;
+                    }
+                }
+                if (U && D && L && R && !UR){
+                    index = 120;
+                    if (terrain[x+1][y-1]== 0){
+                        index += 144;
+                    }
+                }
+                if (U && D && L && !R){
+                    index = 24;
+                    if (terrain[x+1][y]== 0){
+                        index += 144;
+                    }
+                    
+                }
+                if (U && D && !L && R){
+                    index = 29;
+                    if (terrain[x-1][y]== 0){
+                        index += 144;
+                    }
+                    
+                }
+                if (!U && D && L && R){
+                    index = 121;
+                    if (terrain[x][y-1]== 0){
+                        index += 144;
+                    }
+                    
+                }
+                if (U && !D && L && R){
+                    index = 1;
+                    if (terrain[x][y+1]== 0){
+                        index += 144;
+                    }
+                    
+                }
+                
+                
+                
+                if (!U && D && L && !R){
+                    index = 26;
+                    if (terrain[x+1][y]== 0){
+                        index += 144;
+                    }
+                    
+                }
+                if (!U && D && !L && R){
+                    index = 25;
+                    if (terrain[x-1][y]== 0){
+                        index += 144;
+                    }
+                    
+                }
+                if (U && !D && !L && R){
+                    index = 49;
+                    if (terrain[x-1][y]== 0){
+                        index += 144;
+                    }
+                    
+                }
+                if (U && !D && L && !R){
+                    index = 50;
+                    if (terrain[x][y+1]== 0){
+                        index += 144;
+                    }
+                    
+                }
+                map.putTile(index,x,y,layer);
+            }
+            if (terrain[x][y] == 2){
+                //Dirt 28?
+                map.putTile(100,x,y,layer);
+                
+            }
+        }
+        var updateRate = 1;
+        var currTime = 0;
+        function update() {
+            currTime += time.physicsElapsed*updateRate;
+            createMap(currTime);
+        }
+        
+        function render() {
+            
+        }
+        
+    </script>
+
+    </body>
+</html>
